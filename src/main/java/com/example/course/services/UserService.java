@@ -13,6 +13,7 @@ import com.example.course.repositories.UserRepository;
 import com.example.course.services.exceptions.DatabaseException;
 import com.example.course.services.exceptions.ResourceNotFoundException;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -20,21 +21,20 @@ public class UserService {
 
 	@Autowired
 	private UserRepository repo;
-	
-	
+
 	public List<User> findAll() {
 		return repo.findAll();
 	}
-	
+
 	public User findById(Long id) {
 		Optional<User> obj = repo.findById(id);
 		return obj.orElseThrow(() -> new ResourceNotFoundException(id));
 	}
-	
+
 	public User insert(User obj) {
 		return repo.save(obj);
 	}
-	
+
 	public void delete(Long id) {
 		try {
 			repo.deleteById(id);
@@ -44,20 +44,24 @@ public class UserService {
 			throw new DatabaseException(e.getMessage());
 		}
 	}
-	
+
 	@Transactional
 	public User update(Long id, User obj) {
-		User entity = repo.getReferenceById(id);
-		updateData(entity, obj);
-		return repo.save(entity);
+		try {
+			User entity = repo.getReferenceById(id);
+			updateData(entity, obj);
+			return repo.save(entity);
+		} catch (EntityNotFoundException e) {
+			throw new ResourceNotFoundException(id);
+		}
+
 	}
 
 	private void updateData(User entity, User obj) {
 		entity.setName(obj.getName());
 		entity.setEmail(obj.getEmail());
 		entity.setPhone(obj.getPhone());
-		
+
 	}
-	
-	
+
 }
